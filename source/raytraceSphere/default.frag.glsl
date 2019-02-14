@@ -7,11 +7,14 @@ varying vec2 st;
 vec3 spherePosition[sphereCount];
 vec4 sphereColor[sphereCount];
 
-void main() {
+void load(){
   spherePosition[0] = vec3(0.0, 0.0, 10.0);
   spherePosition[1] = vec3(0.0, 0.0, 20.0);
   sphereColor[0] = vec4(0.0, 1.0, 0.0, 1.0);
   sphereColor[1] = vec4(0.0, 0.0, 1.0, 1.0);
+}
 
+void main() {
+  load();
   gl_FragColor = vec4(st.s, st.t, 0.0, 1.0);
 }
