@@ -1,5 +1,6 @@
 #version 100
 precision mediump float;
+varying vec2 st;
 
 #define sphereCount 2
 
@@ -12,5 +13,5 @@ void main() {
   sphereColor[0] = vec4(0.0, 1.0, 0.0, 1.0);
   sphereColor[1] = vec4(0.0, 0.0, 1.0, 1.0);
 
-  gl_FragColor = vec4(1.0, 0.0, 0.0, 1.0);
+  gl_FragColor = vec4(st.s, st.t, 0.0, 1.0);
 }
