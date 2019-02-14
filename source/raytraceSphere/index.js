@@ -7,6 +7,18 @@ const shaders = {};
 const programs = {};
 const models = {};
 
+function getAttribute(program, key) {
+  const v = gl.getAttribLocation(program, key);
+  if (v === -1) error(key, v);
+  return v;
+}
+
+function getUniform(program, key) {
+  const v = gl.getUniformLocation(program, key);
+  if (v === -1) error(key, v);
+  return v;
+}
+
 const requestFile = url => {
   return new Promise((resolve, reject) => {
     var request = new XMLHttpRequest();
@@ -66,9 +78,9 @@ const resizeCanvas = () => {
 };
 
 const renderFirst = () => {
-  gl.enable(gl.DEPTH_TEST);
-  gl.enable(gl.CULL_FACE);
-  gl.cullFace(gl.BACK);
+  // gl.enable(gl.DEPTH_TEST);
+  // gl.enable(gl.CULL_FACE);
+  // gl.cullFace(gl.BACK);
   lastTime = Date.now();
   window.requestAnimationFrame(renderFrame);
 };
@@ -83,9 +95,14 @@ const renderFrame = () => {
   gl.useProgram(programs.default);
   gl.bindBuffer(gl.ARRAY_BUFFER, models.quad.bufferPosition);
   gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, models.quad.bufferIndices);
+
+  const vertexPosition = getAttribute(programs.default, "vertexPosition");
+  gl.vertexAttribPointer(vertexPosition, 2, gl.FLOAT, false, 0, 0);
+  gl.enableVertexAttribArray(vertexPosition);
+
   gl.drawElements(
     gl.TRIANGLES,
-    models.quad.bufferIndices.length,
+    models.quad.indicesData.length,
     gl.UNSIGNED_SHORT,
     0
   );
@@ -107,20 +124,7 @@ const runAsync = async () => {
     await requestFile("default.frag.glsl")
   );
 
-  const verticesData = [
-    -0.5,
-    +0.5,
-    +0.0,
-    -0.5,
-    -0.5,
-    +0.0,
-    +0.5,
-    -0.5,
-    +0.0,
-    +0.5,
-    +0.5,
-    +0.0
-  ];
+  const verticesData = [-1, +1, -1, -1, +1, -1, +1, +1];
   const indicesData = [3, 2, 1, 3, 1, 0];
 
   const bufferPosition = gl.createBuffer();
@@ -141,7 +145,9 @@ const runAsync = async () => {
 
   const model = {
     bufferPosition,
-    bufferIndices
+    bufferIndices,
+    indicesData,
+    verticesData
   };
   models.quad = model;
 
