@@ -8,6 +8,33 @@ const programs = {};
 const models = {};
 const textures = {};
 
+const loadImage = url => {
+  return new Promise(resolve => {
+    const image = new Image();
+    image.onload = function() {
+      const texture = gl.createTexture();
+      gl.bindTexture(gl.TEXTURE_2D, texture);
+      const level = 0;
+      const internalFormat = gl.RGBA;
+      const srcFormat = gl.RGBA;
+      const srcType = gl.UNSIGNED_BYTE;
+      gl.texImage2D(
+        gl.TEXTURE_2D,
+        level,
+        internalFormat,
+        srcFormat,
+        srcType,
+        image
+      );
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+      resolve(texture);
+    };
+    image.src = url;
+  });
+};
+
 function getAttribute(program, key) {
   const v = gl.getAttribLocation(program, key);
   if (v === -1) error(key, v);
@@ -123,6 +150,14 @@ const renderFrame = () => {
     gl.bindTexture(gl.TEXTURE_2D, textures.heightA);
     const heightSampler = getUniform(programs.rendering, "heightSampler");
     gl.uniform1i(heightSampler, 0);
+
+    gl.activeTexture(gl.TEXTURE1);
+    gl.bindTexture(gl.TEXTURE_2D, textures.background);
+    const backgroundSampler = getUniform(
+      programs.rendering,
+      "backgroundSampler"
+    );
+    gl.uniform1i(backgroundSampler, 1);
 
     gl.bindBuffer(gl.ARRAY_BUFFER, models.stamp.bufferPosition);
     gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, models.stamp.bufferIndices);
@@ -259,6 +294,11 @@ const runAsync = async () => {
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
     textures.heightA = texture;
+  }
+
+  {
+    const texture = await loadImage("background.jpg");
+    textures.background = texture;
   }
 
   window.requestAnimationFrame(renderFirst);
