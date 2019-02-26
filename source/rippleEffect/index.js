@@ -91,27 +91,53 @@ const renderFrame = () => {
   gl.viewport(0, 0, gl.drawingBufferWidth, gl.drawingBufferHeight);
   gl.clearColor(0.529, 0.808, 0.922, 1.0);
   gl.clear(gl.COLOR_BUFFER_BIT);
-
   gl.lineWidth(1);
-  gl.useProgram(programs.rendering);
-  gl.bindBuffer(gl.ARRAY_BUFFER, models.quad.bufferPosition);
-  gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, models.quad.bufferIndices);
 
-  const vertexPosition = getAttribute(programs.rendering, "vertexPosition");
-  gl.vertexAttribPointer(vertexPosition, 2, gl.FLOAT, false, 0, 0);
-  gl.enableVertexAttribArray(vertexPosition);
+  {
+    gl.useProgram(programs.rendering);
 
-  gl.activeTexture(gl.TEXTURE0);
-  gl.bindTexture(gl.TEXTURE_2D, textures.heightA);
-  const heightSampler = getUniform(programs.rendering, "heightSampler");
-  gl.uniform1i(heightSampler, 0);
+    gl.activeTexture(gl.TEXTURE0);
+    gl.bindTexture(gl.TEXTURE_2D, textures.heightA);
+    const heightSampler = getUniform(programs.rendering, "heightSampler");
+    gl.uniform1i(heightSampler, 0);
 
-  gl.drawElements(
-    gl.TRIANGLES,
-    models.quad.indicesData.length,
-    gl.UNSIGNED_SHORT,
-    0
-  );
+    gl.bindBuffer(gl.ARRAY_BUFFER, models.quad.bufferPosition);
+    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, models.quad.bufferIndices);
+
+    const vertexPosition = getAttribute(programs.rendering, "vertexPosition");
+    gl.vertexAttribPointer(vertexPosition, 2, gl.FLOAT, false, 0, 0);
+    gl.enableVertexAttribArray(vertexPosition);
+
+    gl.drawElements(
+      gl.TRIANGLES,
+      models.quad.indicesData.length,
+      gl.UNSIGNED_SHORT,
+      0
+    );
+  }
+
+  {
+    gl.useProgram(programs.rendering);
+
+    gl.activeTexture(gl.TEXTURE0);
+    gl.bindTexture(gl.TEXTURE_2D, textures.heightA);
+    const heightSampler = getUniform(programs.rendering, "heightSampler");
+    gl.uniform1i(heightSampler, 0);
+
+    gl.bindBuffer(gl.ARRAY_BUFFER, models.stamp.bufferPosition);
+    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, models.stamp.bufferIndices);
+
+    const vertexPosition = getAttribute(programs.rendering, "vertexPosition");
+    gl.enableVertexAttribArray(vertexPosition);
+    gl.vertexAttribPointer(vertexPosition, 2, gl.FLOAT, false, 0, 0);
+
+    gl.drawElements(
+      gl.TRIANGLES,
+      models.stamp.indicesData.length,
+      gl.UNSIGNED_SHORT,
+      0
+    );
+  }
 
   const nowTime = Date.now();
   const elapsedTime = nowTime - lastTime;
@@ -134,32 +160,63 @@ const runAsync = async () => {
     await requestFile("rendering.frag.glsl")
   );
 
-  const verticesData = [-1, +1, -1, -1, +1, -1, +1, +1];
-  const indicesData = [3, 2, 1, 3, 1, 0];
+  {
+    const verticesData = [-1, +1, -1, -1, +1, -1, +1, +1];
+    const indicesData = [0, 1, 3, 3, 1, 2];
 
-  const bufferPosition = gl.createBuffer();
-  gl.bindBuffer(gl.ARRAY_BUFFER, bufferPosition);
-  gl.bufferData(
-    gl.ARRAY_BUFFER,
-    new Float32Array(verticesData),
-    gl.STATIC_DRAW
-  );
+    const bufferPosition = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, bufferPosition);
+    gl.bufferData(
+      gl.ARRAY_BUFFER,
+      new Float32Array(verticesData),
+      gl.STATIC_DRAW
+    );
 
-  const bufferIndices = gl.createBuffer();
-  gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, bufferIndices);
-  gl.bufferData(
-    gl.ELEMENT_ARRAY_BUFFER,
-    new Uint16Array(indicesData),
-    gl.STATIC_DRAW
-  );
+    const bufferIndices = gl.createBuffer();
+    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, bufferIndices);
+    gl.bufferData(
+      gl.ELEMENT_ARRAY_BUFFER,
+      new Uint16Array(indicesData),
+      gl.STATIC_DRAW
+    );
 
-  const model = {
-    bufferPosition,
-    bufferIndices,
-    indicesData,
-    verticesData
-  };
-  models.quad = model;
+    const model = {
+      bufferPosition,
+      bufferIndices,
+      indicesData,
+      verticesData
+    };
+    models.quad = model;
+  }
+
+  {
+    const verticesData = [-0.0, +0.5, +0.5, -0.5, -0.5, -0.5];
+    const indicesData = [0, 2, 1];
+
+    const bufferPosition = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, bufferPosition);
+    gl.bufferData(
+      gl.ARRAY_BUFFER,
+      new Float32Array(verticesData),
+      gl.STATIC_DRAW
+    );
+
+    const bufferIndices = gl.createBuffer();
+    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, bufferIndices);
+    gl.bufferData(
+      gl.ELEMENT_ARRAY_BUFFER,
+      new Uint16Array(indicesData),
+      gl.STATIC_DRAW
+    );
+
+    const model = {
+      bufferPosition,
+      bufferIndices,
+      indicesData,
+      verticesData
+    };
+    models.stamp = model;
+  }
 
   {
     const data = [];
