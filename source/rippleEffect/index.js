@@ -115,6 +115,10 @@ const renderFrame = () => {
 };
 
 const runAsync = async () => {
+  document.addEventListener("click", e => {
+    console.log(e.x, e.y, e);
+  });
+
   if (!gl) {
     throw "failed to get gl context. your browser may does support webgl";
   }
