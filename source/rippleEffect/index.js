@@ -93,17 +93,17 @@ const renderFrame = () => {
   gl.clear(gl.COLOR_BUFFER_BIT);
 
   gl.lineWidth(1);
-  gl.useProgram(programs.default);
+  gl.useProgram(programs.rendering);
   gl.bindBuffer(gl.ARRAY_BUFFER, models.quad.bufferPosition);
   gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, models.quad.bufferIndices);
 
-  const vertexPosition = getAttribute(programs.default, "vertexPosition");
+  const vertexPosition = getAttribute(programs.rendering, "vertexPosition");
   gl.vertexAttribPointer(vertexPosition, 2, gl.FLOAT, false, 0, 0);
   gl.enableVertexAttribArray(vertexPosition);
 
   gl.activeTexture(gl.TEXTURE0);
   gl.bindTexture(gl.TEXTURE_2D, textures.heightA);
-  const heightSampler = getUniform(programs.default, "heightSampler");
+  const heightSampler = getUniform(programs.rendering, "heightSampler");
   gl.uniform1i(heightSampler, 0);
 
   gl.drawElements(
@@ -129,9 +129,9 @@ const runAsync = async () => {
     throw "failed to get gl context. your browser may does support webgl";
   }
 
-  programs.default = loadShaderProgram(
-    await requestFile("default.vert.glsl"),
-    await requestFile("default.frag.glsl")
+  programs.rendering = loadShaderProgram(
+    await requestFile("rendering.vert.glsl"),
+    await requestFile("rendering.frag.glsl")
   );
 
   const verticesData = [-1, +1, -1, -1, +1, -1, +1, +1];
