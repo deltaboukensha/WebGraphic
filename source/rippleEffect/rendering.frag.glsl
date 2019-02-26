@@ -1,9 +1,10 @@
-#version 100
+#version 300 es
 precision mediump float;
-varying highp vec2 st;
+in vec2 st;
 uniform sampler2D heightSampler;
+out vec4 fragment;
 
 void main() {
-  float height = texture2D(heightSampler, vec2(st.s, st.t)).r;
-  gl_FragColor = vec4(height, 0.0, 0.0, 1.0);
+  float height = texture(heightSampler, vec2(st.s, st.t)).r;
+  fragment = vec4(height, 0.0, 0.0, 1.0);
 }
