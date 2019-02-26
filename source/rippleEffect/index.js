@@ -7,6 +7,7 @@ const shaders = {};
 const programs = {};
 const models = {};
 const textures = {};
+const frameBuffers = {};
 
 const loadImage = url => {
   return new Promise(resolve => {
@@ -105,16 +106,12 @@ const resizeCanvas = () => {
   }
 };
 
-const renderFirst = () => {
-  // gl.enable(gl.DEPTH_TEST);
-  // gl.enable(gl.CULL_FACE);
-  // gl.cullFace(gl.BACK);
-  lastTime = Date.now();
-  window.requestAnimationFrame(renderFrame);
+const updateScene = () => {
+  gl.bindFramebuffer(gl.FRAMEBUFFER, frameBuffers.frame);
+  gl.bindFramebuffer(gl.FRAMEBUFFER, null);
 };
 
-const renderFrame = () => {
-  resizeCanvas();
+const drawScene = () => {
   gl.viewport(0, 0, gl.drawingBufferWidth, gl.drawingBufferHeight);
   gl.clearColor(0.529, 0.808, 0.922, 1.0);
   gl.clear(gl.COLOR_BUFFER_BIT);
@@ -173,7 +170,20 @@ const renderFrame = () => {
       0
     );
   }
+};
 
+const renderFirst = () => {
+  // gl.enable(gl.DEPTH_TEST);
+  // gl.enable(gl.CULL_FACE);
+  // gl.cullFace(gl.BACK);
+  lastTime = Date.now();
+  window.requestAnimationFrame(renderFrame);
+};
+
+const renderFrame = () => {
+  resizeCanvas();
+  updateScene();
+  drawScene();
   const nowTime = Date.now();
   const elapsedTime = nowTime - lastTime;
   // console.log({ elapsedTime });
@@ -297,8 +307,66 @@ const runAsync = async () => {
   }
 
   {
+    const data = [];
+    for (let y = 0; y < 256; y++) {
+      for (let x = 0; x < 256; x++) {
+        data.push(255);
+        data.push(255);
+        data.push(255);
+        data.push(255);
+      }
+    }
+
+    // https://developer.mozilla.org/en-US/docs/Web/API/WebGLRenderingContext/texImage2D
+    const target = gl.TEXTURE_2D;
+    const level = 0;
+    const internalformat = gl.RGBA;
+    const width = 256;
+    const height = 256;
+    const border = 0;
+    const format = internalformat;
+    const type = gl.UNSIGNED_BYTE;
+    const pixels = new Uint8Array(data);
+    const offset = 0;
+    const texture = gl.createTexture();
+    gl.bindTexture(gl.TEXTURE_2D, texture);
+    gl.texImage2D(
+      target,
+      level,
+      internalformat,
+      width,
+      height,
+      border,
+      format,
+      type,
+      pixels,
+      offset
+    );
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+    textures.heightB = texture;
+  }
+
+  {
     const texture = await loadImage("background.jpg");
     textures.background = texture;
+  }
+
+  {
+    const frameBuffer = gl.createFramebuffer();
+    gl.bindFramebuffer(gl.FRAMEBUFFER, frameBuffer);
+    const targetTexture = textures.heightA;
+    const level = 0;
+    gl.framebufferTexture2D(
+      gl.FRAMEBUFFER,
+      gl.COLOR_ATTACHMENT0,
+      gl.TEXTURE_2D,
+      targetTexture,
+      level
+    );
+    frameBuffers.frame = frameBuffer;
   }
 
   window.requestAnimationFrame(renderFirst);
