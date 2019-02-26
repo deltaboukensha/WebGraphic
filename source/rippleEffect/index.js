@@ -108,37 +108,6 @@ const resizeCanvas = () => {
 
 const updateScene = () => {
   gl.bindFramebuffer(gl.FRAMEBUFFER, frameBuffers.frame);
-  gl.bindFramebuffer(gl.FRAMEBUFFER, null);
-};
-
-const drawScene = () => {
-  gl.viewport(0, 0, gl.drawingBufferWidth, gl.drawingBufferHeight);
-  gl.clearColor(0.529, 0.808, 0.922, 1.0);
-  gl.clear(gl.COLOR_BUFFER_BIT);
-  gl.lineWidth(1);
-
-  {
-    gl.useProgram(programs.rendering);
-
-    gl.activeTexture(gl.TEXTURE0);
-    gl.bindTexture(gl.TEXTURE_2D, textures.heightA);
-    const heightSampler = getUniform(programs.rendering, "heightSampler");
-    gl.uniform1i(heightSampler, 0);
-
-    gl.bindBuffer(gl.ARRAY_BUFFER, models.quad.bufferPosition);
-    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, models.quad.bufferIndices);
-
-    const vertexPosition = getAttribute(programs.rendering, "vertexPosition");
-    gl.vertexAttribPointer(vertexPosition, 2, gl.FLOAT, false, 0, 0);
-    gl.enableVertexAttribArray(vertexPosition);
-
-    gl.drawElements(
-      gl.TRIANGLES,
-      models.quad.indicesData.length,
-      gl.UNSIGNED_SHORT,
-      0
-    );
-  }
 
   {
     gl.useProgram(programs.rendering);
@@ -166,6 +135,38 @@ const drawScene = () => {
     gl.drawElements(
       gl.TRIANGLES,
       models.stamp.indicesData.length,
+      gl.UNSIGNED_SHORT,
+      0
+    );
+  }
+
+  gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+};
+
+const drawScene = () => {
+  gl.viewport(0, 0, gl.drawingBufferWidth, gl.drawingBufferHeight);
+  gl.clearColor(0.529, 0.808, 0.922, 1.0);
+  gl.clear(gl.COLOR_BUFFER_BIT);
+  gl.lineWidth(1);
+
+  {
+    gl.useProgram(programs.rendering);
+
+    gl.activeTexture(gl.TEXTURE0);
+    gl.bindTexture(gl.TEXTURE_2D, textures.heightB);
+    const heightSampler = getUniform(programs.rendering, "heightSampler");
+    gl.uniform1i(heightSampler, 0);
+
+    gl.bindBuffer(gl.ARRAY_BUFFER, models.quad.bufferPosition);
+    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, models.quad.bufferIndices);
+
+    const vertexPosition = getAttribute(programs.rendering, "vertexPosition");
+    gl.vertexAttribPointer(vertexPosition, 2, gl.FLOAT, false, 0, 0);
+    gl.enableVertexAttribArray(vertexPosition);
+
+    gl.drawElements(
+      gl.TRIANGLES,
+      models.quad.indicesData.length,
       gl.UNSIGNED_SHORT,
       0
     );
@@ -310,9 +311,9 @@ const runAsync = async () => {
     const data = [];
     for (let y = 0; y < 256; y++) {
       for (let x = 0; x < 256; x++) {
-        data.push(255);
-        data.push(255);
-        data.push(255);
+        data.push(0);
+        data.push(0);
+        data.push(0);
         data.push(255);
       }
     }
@@ -357,7 +358,7 @@ const runAsync = async () => {
   {
     const frameBuffer = gl.createFramebuffer();
     gl.bindFramebuffer(gl.FRAMEBUFFER, frameBuffer);
-    const targetTexture = textures.heightA;
+    const targetTexture = textures.heightB;
     const level = 0;
     gl.framebufferTexture2D(
       gl.FRAMEBUFFER,
