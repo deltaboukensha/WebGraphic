@@ -6,6 +6,7 @@ let lastTime;
 const shaders = {};
 const programs = {};
 const models = {};
+const textures = {};
 
 function getAttribute(program, key) {
   const v = gl.getAttribLocation(program, key);
@@ -100,6 +101,11 @@ const renderFrame = () => {
   gl.vertexAttribPointer(vertexPosition, 2, gl.FLOAT, false, 0, 0);
   gl.enableVertexAttribArray(vertexPosition);
 
+  gl.activeTexture(gl.TEXTURE0);
+  gl.bindTexture(gl.TEXTURE_2D, textures.heightA);
+  const heightSampler = getUniform(programs.default, "heightSampler");
+  gl.uniform1i(heightSampler, 0);
+
   gl.drawElements(
     gl.TRIANGLES,
     models.quad.indicesData.length,
@@ -154,6 +160,49 @@ const runAsync = async () => {
     verticesData
   };
   models.quad = model;
+
+  {
+    const data = [];
+    for (let y = 0; y < 256; y++) {
+      for (let x = 0; x < 256; x++) {
+        data.push(255);
+        data.push(255);
+        data.push(255);
+        data.push(255);
+      }
+    }
+
+    // https://developer.mozilla.org/en-US/docs/Web/API/WebGLRenderingContext/texImage2D
+    const target = gl.TEXTURE_2D;
+    const level = 0;
+    const internalformat = gl.RGBA;
+    const width = 256;
+    const height = 256;
+    const border = 0;
+    const format = internalformat;
+    const type = gl.UNSIGNED_BYTE;
+    const pixels = new Uint8Array(data);
+    const offset = 0;
+    const texture = gl.createTexture();
+    gl.bindTexture(gl.TEXTURE_2D, texture);
+    gl.texImage2D(
+      target,
+      level,
+      internalformat,
+      width,
+      height,
+      border,
+      format,
+      type,
+      pixels,
+      offset
+    );
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+    textures.heightA = texture;
+  }
 
   window.requestAnimationFrame(renderFirst);
 };
