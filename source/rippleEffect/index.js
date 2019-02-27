@@ -110,25 +110,12 @@ const updateScene = () => {
   gl.bindFramebuffer(gl.FRAMEBUFFER, frameBuffers.frame);
 
   {
-    gl.useProgram(programs.rendering);
-
-    gl.activeTexture(gl.TEXTURE0);
-    gl.bindTexture(gl.TEXTURE_2D, textures.heightA);
-    const heightSampler = getUniform(programs.rendering, "heightSampler");
-    gl.uniform1i(heightSampler, 0);
-
-    gl.activeTexture(gl.TEXTURE1);
-    gl.bindTexture(gl.TEXTURE_2D, textures.background);
-    const backgroundSampler = getUniform(
-      programs.rendering,
-      "backgroundSampler"
-    );
-    gl.uniform1i(backgroundSampler, 1);
+    gl.useProgram(programs.stamp);
 
     gl.bindBuffer(gl.ARRAY_BUFFER, models.stamp.bufferPosition);
     gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, models.stamp.bufferIndices);
 
-    const vertexPosition = getAttribute(programs.rendering, "vertexPosition");
+    const vertexPosition = getAttribute(programs.stamp, "vertexPosition");
     gl.enableVertexAttribArray(vertexPosition);
     gl.vertexAttribPointer(vertexPosition, 2, gl.FLOAT, false, 0, 0);
 
@@ -204,6 +191,11 @@ const runAsync = async () => {
   programs.rendering = loadShaderProgram(
     await requestFile("rendering.vert.glsl"),
     await requestFile("rendering.frag.glsl")
+  );
+
+  programs.stamp = loadShaderProgram(
+    await requestFile("stamp.vert.glsl"),
+    await requestFile("stamp.frag.glsl")
   );
 
   {
