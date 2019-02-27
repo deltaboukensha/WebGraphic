@@ -3,6 +3,7 @@ const error = console.error.bind(console);
 const canvas = document.querySelector("canvas");
 const gl = canvas.getContext("webgl2");
 let lastTime;
+let pingPong = true;
 const shaders = {};
 const programs = {};
 const models = {};
@@ -107,7 +108,38 @@ const resizeCanvas = () => {
 };
 
 const updateScene = () => {
-  gl.bindFramebuffer(gl.FRAMEBUFFER, frameBuffers.frame);
+  if (pingPong) {
+    gl.bindFramebuffer(gl.FRAMEBUFFER, frameBuffers.frameA);
+  } else {
+    gl.bindFramebuffer(gl.FRAMEBUFFER, frameBuffers.frameB);
+  }
+
+  gl.useProgram(programs.update);
+
+  if (!pingPong) {
+    gl.activeTexture(gl.TEXTURE0);
+    gl.bindTexture(gl.TEXTURE_2D, textures.heightA);
+  } else {
+    gl.activeTexture(gl.TEXTURE0);
+    gl.bindTexture(gl.TEXTURE_2D, textures.heightB);
+  }
+
+  const heightSampler = getUniform(programs.update, "heightSampler");
+  gl.uniform1i(heightSampler, 0);
+
+  gl.bindBuffer(gl.ARRAY_BUFFER, models.quad.bufferPosition);
+  gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, models.quad.bufferIndices);
+
+  const vertexPosition = getAttribute(programs.rendering, "vertexPosition");
+  gl.vertexAttribPointer(vertexPosition, 2, gl.FLOAT, false, 0, 0);
+  gl.enableVertexAttribArray(vertexPosition);
+
+  gl.drawElements(
+    gl.TRIANGLES,
+    models.quad.indicesData.length,
+    gl.UNSIGNED_SHORT,
+    0
+  );
 
   {
     gl.useProgram(programs.stamp);
@@ -128,6 +160,7 @@ const updateScene = () => {
   }
 
   gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+  pingPong = !pingPong;
 };
 
 const drawScene = () => {
@@ -196,6 +229,11 @@ const runAsync = async () => {
   programs.stamp = loadShaderProgram(
     await requestFile("stamp.vert.glsl"),
     await requestFile("stamp.frag.glsl")
+  );
+
+  programs.update = loadShaderProgram(
+    await requestFile("update.vert.glsl"),
+    await requestFile("update.frag.glsl")
   );
 
   {
@@ -350,6 +388,21 @@ const runAsync = async () => {
   {
     const frameBuffer = gl.createFramebuffer();
     gl.bindFramebuffer(gl.FRAMEBUFFER, frameBuffer);
+    const targetTexture = textures.heightA;
+    const level = 0;
+    gl.framebufferTexture2D(
+      gl.FRAMEBUFFER,
+      gl.COLOR_ATTACHMENT0,
+      gl.TEXTURE_2D,
+      targetTexture,
+      level
+    );
+    frameBuffers.frameA = frameBuffer;
+  }
+
+  {
+    const frameBuffer = gl.createFramebuffer();
+    gl.bindFramebuffer(gl.FRAMEBUFFER, frameBuffer);
     const targetTexture = textures.heightB;
     const level = 0;
     gl.framebufferTexture2D(
@@ -359,7 +412,7 @@ const runAsync = async () => {
       targetTexture,
       level
     );
-    frameBuffers.frame = frameBuffer;
+    frameBuffers.frameB = frameBuffer;
   }
 
   window.requestAnimationFrame(renderFirst);
