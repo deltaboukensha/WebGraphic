@@ -3,7 +3,7 @@ const error = console.error.bind(console);
 const canvas = document.querySelector("canvas");
 const gl = canvas.getContext("webgl2");
 let lastTime;
-let pingPong = true;
+let frameCount = 0;
 const shaders = {};
 const programs = {};
 const models = {};
@@ -108,38 +108,47 @@ const resizeCanvas = () => {
 };
 
 const updateScene = () => {
-  if (pingPong) {
-    gl.bindFramebuffer(gl.FRAMEBUFFER, frameBuffers.frameA);
-  } else {
-    gl.bindFramebuffer(gl.FRAMEBUFFER, frameBuffers.frameB);
-  }
-
   gl.useProgram(programs.update);
+  const beforeSampler = getUniform(programs.update, "beforeSampler");
+  const currentSampler = getUniform(programs.update, "currentSampler");
+  gl.uniform1i(beforeSampler, 0);
+  gl.uniform1i(currentSampler, 1);
 
-  if (!pingPong) {
+  if (frameCount % 3 === 0) {
+    gl.bindFramebuffer(gl.FRAMEBUFFER, frameBuffers.frameC);
     gl.activeTexture(gl.TEXTURE0);
     gl.bindTexture(gl.TEXTURE_2D, textures.heightA);
-  } else {
+    gl.activeTexture(gl.TEXTURE1);
+    gl.bindTexture(gl.TEXTURE_2D, textures.heightB);
+  } else if (frameCount % 3 === 1) {
+    gl.bindFramebuffer(gl.FRAMEBUFFER, frameBuffers.frameA);
     gl.activeTexture(gl.TEXTURE0);
     gl.bindTexture(gl.TEXTURE_2D, textures.heightB);
+    gl.activeTexture(gl.TEXTURE1);
+    gl.bindTexture(gl.TEXTURE_2D, textures.heightC);
+  } else {
+    gl.bindFramebuffer(gl.FRAMEBUFFER, frameBuffers.frameB);
+    gl.activeTexture(gl.TEXTURE0);
+    gl.bindTexture(gl.TEXTURE_2D, textures.heightC);
+    gl.activeTexture(gl.TEXTURE1);
+    gl.bindTexture(gl.TEXTURE_2D, textures.heightA);
   }
 
-  const heightSampler = getUniform(programs.update, "heightSampler");
-  gl.uniform1i(heightSampler, 0);
+  {
+    gl.bindBuffer(gl.ARRAY_BUFFER, models.quad.bufferPosition);
+    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, models.quad.bufferIndices);
 
-  gl.bindBuffer(gl.ARRAY_BUFFER, models.quad.bufferPosition);
-  gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, models.quad.bufferIndices);
+    const vertexPosition = getAttribute(programs.update, "vertexPosition");
+    gl.vertexAttribPointer(vertexPosition, 2, gl.FLOAT, false, 0, 0);
+    gl.enableVertexAttribArray(vertexPosition);
 
-  const vertexPosition = getAttribute(programs.rendering, "vertexPosition");
-  gl.vertexAttribPointer(vertexPosition, 2, gl.FLOAT, false, 0, 0);
-  gl.enableVertexAttribArray(vertexPosition);
-
-  gl.drawElements(
-    gl.TRIANGLES,
-    models.quad.indicesData.length,
-    gl.UNSIGNED_SHORT,
-    0
-  );
+    gl.drawElements(
+      gl.TRIANGLES,
+      models.quad.indicesData.length,
+      gl.UNSIGNED_SHORT,
+      0
+    );
+  }
 
   {
     gl.useProgram(programs.stamp);
@@ -160,7 +169,6 @@ const updateScene = () => {
   }
 
   gl.bindFramebuffer(gl.FRAMEBUFFER, null);
-  pingPong = !pingPong;
 };
 
 const drawScene = () => {
@@ -209,6 +217,7 @@ const renderFrame = () => {
   const elapsedTime = nowTime - lastTime;
   // console.log({ elapsedTime });
   lastTime = nowTime;
+  frameCount++;
   window.requestAnimationFrame(renderFrame);
 };
 
@@ -381,6 +390,49 @@ const runAsync = async () => {
   }
 
   {
+    const data = [];
+    for (let y = 0; y < 256; y++) {
+      for (let x = 0; x < 256; x++) {
+        data.push(0);
+        data.push(0);
+        data.push(0);
+        data.push(255);
+      }
+    }
+
+    // https://developer.mozilla.org/en-US/docs/Web/API/WebGLRenderingContext/texImage2D
+    const target = gl.TEXTURE_2D;
+    const level = 0;
+    const internalformat = gl.RGBA;
+    const width = 256;
+    const height = 256;
+    const border = 0;
+    const format = internalformat;
+    const type = gl.UNSIGNED_BYTE;
+    const pixels = new Uint8Array(data);
+    const offset = 0;
+    const texture = gl.createTexture();
+    gl.bindTexture(gl.TEXTURE_2D, texture);
+    gl.texImage2D(
+      target,
+      level,
+      internalformat,
+      width,
+      height,
+      border,
+      format,
+      type,
+      pixels,
+      offset
+    );
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+    textures.heightC = texture;
+  }
+
+  {
     const texture = await loadImage("background.jpg");
     textures.background = texture;
   }
@@ -388,31 +440,46 @@ const runAsync = async () => {
   {
     const frameBuffer = gl.createFramebuffer();
     gl.bindFramebuffer(gl.FRAMEBUFFER, frameBuffer);
-    const targetTexture = textures.heightA;
-    const level = 0;
+
     gl.framebufferTexture2D(
       gl.FRAMEBUFFER,
       gl.COLOR_ATTACHMENT0,
       gl.TEXTURE_2D,
-      targetTexture,
-      level
+      textures.heightA,
+      0
     );
+
     frameBuffers.frameA = frameBuffer;
   }
 
   {
     const frameBuffer = gl.createFramebuffer();
     gl.bindFramebuffer(gl.FRAMEBUFFER, frameBuffer);
-    const targetTexture = textures.heightB;
-    const level = 0;
+
     gl.framebufferTexture2D(
       gl.FRAMEBUFFER,
       gl.COLOR_ATTACHMENT0,
       gl.TEXTURE_2D,
-      targetTexture,
-      level
+      textures.heightB,
+      0
     );
+
     frameBuffers.frameB = frameBuffer;
+  }
+
+  {
+    const frameBuffer = gl.createFramebuffer();
+    gl.bindFramebuffer(gl.FRAMEBUFFER, frameBuffer);
+
+    gl.framebufferTexture2D(
+      gl.FRAMEBUFFER,
+      gl.COLOR_ATTACHMENT0,
+      gl.TEXTURE_2D,
+      textures.heightC,
+      0
+    );
+
+    frameBuffers.frameC = frameBuffer;
   }
 
   window.requestAnimationFrame(renderFirst);
