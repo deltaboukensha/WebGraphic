@@ -113,7 +113,7 @@ const drawStamp = () => {
 
   if(click){
     const clickUniform = getUniform(programs.stamp, "click");
-    gl.uniform2i(clickUniform, click.x, click.y);  
+    gl.uniform2f(clickUniform, (click.x - 256) / 128.0, -(click.y - 256) / 128.0);  
   }
   
   gl.drawElements(

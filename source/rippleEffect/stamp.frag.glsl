@@ -6,7 +6,7 @@ out vec4 fragment;
 uniform vec2 click;
 
 void main() {
-  vec2 center = vec2(0, 0);
+  vec2 center = click;
   float distanceToCenter = distance(center, st);
   fragment = vec4(1.0 - distanceToCenter * 10.0, 0, 0, 1);
 }
