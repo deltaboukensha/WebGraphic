@@ -98,6 +98,24 @@ const loadShaderProgram = (vertexSource, fragmentSource) => {
   return shaderProgram;
 };
 
+const drawStamp = () => {
+  gl.useProgram(programs.stamp);
+
+  gl.bindBuffer(gl.ARRAY_BUFFER, models.quad.bufferPosition);
+  gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, models.quad.bufferIndices);
+
+  const vertexPosition = getAttribute(programs.stamp, "vertexPosition");
+  gl.enableVertexAttribArray(vertexPosition);
+  gl.vertexAttribPointer(vertexPosition, 2, gl.FLOAT, false, 0, 0);
+
+  gl.drawElements(
+    gl.TRIANGLES,
+    models.quad.indicesData.length,
+    gl.UNSIGNED_SHORT,
+    0
+  );
+}
+
 const updateScene = () => {
   gl.useProgram(programs.update);
   const beforeSampler = getUniform(programs.update, "beforeSampler");
@@ -143,22 +161,7 @@ const updateScene = () => {
 
   if(click)
   {
-    console.log("stamp");
-    gl.useProgram(programs.stamp);
-
-    gl.bindBuffer(gl.ARRAY_BUFFER, models.quad.bufferPosition);
-    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, models.quad.bufferIndices);
-
-    const vertexPosition = getAttribute(programs.stamp, "vertexPosition");
-    gl.enableVertexAttribArray(vertexPosition);
-    gl.vertexAttribPointer(vertexPosition, 2, gl.FLOAT, false, 0, 0);
-
-    gl.drawElements(
-      gl.TRIANGLES,
-      models.quad.indicesData.length,
-      gl.UNSIGNED_SHORT,
-      0
-    );
+    drawStamp();
   }
 
   gl.bindFramebuffer(gl.FRAMEBUFFER, null);
@@ -168,18 +171,21 @@ const drawScene = () => {
   gl.viewport(0, 0, 512, 512);
   gl.clearColor(0.529, 0.808, 0.922, 1.0);
   gl.clear(gl.COLOR_BUFFER_BIT);
-  gl.lineWidth(1);
 
-  if(click)
   {
-    gl.useProgram(programs.stamp);
+    gl.useProgram(programs.rendering);
+
+    gl.activeTexture(gl.TEXTURE0);
+    gl.bindTexture(gl.TEXTURE_2D, textures.heightB);
+    const heightSampler = getUniform(programs.rendering, "heightSampler");
+    gl.uniform1i(heightSampler, 0);
 
     gl.bindBuffer(gl.ARRAY_BUFFER, models.quad.bufferPosition);
     gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, models.quad.bufferIndices);
 
-    const vertexPosition = getAttribute(programs.stamp, "vertexPosition");
-    gl.enableVertexAttribArray(vertexPosition);
+    const vertexPosition = getAttribute(programs.rendering, "vertexPosition");
     gl.vertexAttribPointer(vertexPosition, 2, gl.FLOAT, false, 0, 0);
+    gl.enableVertexAttribArray(vertexPosition);
 
     gl.drawElements(
       gl.TRIANGLES,
@@ -187,29 +193,6 @@ const drawScene = () => {
       gl.UNSIGNED_SHORT,
       0
     );
-  }
-  
-  {
-    // gl.useProgram(programs.rendering);
-
-    // gl.activeTexture(gl.TEXTURE0);
-    // gl.bindTexture(gl.TEXTURE_2D, textures.heightB);
-    // const heightSampler = getUniform(programs.rendering, "heightSampler");
-    // gl.uniform1i(heightSampler, 0);
-
-    // gl.bindBuffer(gl.ARRAY_BUFFER, models.quad.bufferPosition);
-    // gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, models.quad.bufferIndices);
-
-    // const vertexPosition = getAttribute(programs.rendering, "vertexPosition");
-    // gl.vertexAttribPointer(vertexPosition, 2, gl.FLOAT, false, 0, 0);
-    // gl.enableVertexAttribArray(vertexPosition);
-
-    // gl.drawElements(
-    //   gl.TRIANGLES,
-    //   models.quad.indicesData.length,
-    //   gl.UNSIGNED_SHORT,
-    //   0
-    // );
   }
 };
 
