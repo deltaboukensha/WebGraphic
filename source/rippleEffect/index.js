@@ -9,6 +9,7 @@ const programs = {};
 const models = {};
 const textures = {};
 const frameBuffers = {};
+let click = null;
 
 const loadImage = url => {
   return new Promise(resolve => {
@@ -97,16 +98,6 @@ const loadShaderProgram = (vertexSource, fragmentSource) => {
   return shaderProgram;
 };
 
-const resizeCanvas = () => {
-  let displayWidth = canvas.clientWidth;
-  let displayHeight = canvas.clientHeight;
-
-  if (canvas.width != displayWidth || canvas.height != displayHeight) {
-    canvas.width = displayWidth;
-    canvas.height = displayHeight;
-  }
-};
-
 const updateScene = () => {
   gl.useProgram(programs.update);
   const beforeSampler = getUniform(programs.update, "beforeSampler");
@@ -150,11 +141,13 @@ const updateScene = () => {
     );
   }
 
+  if(click)
   {
+    console.log("stamp");
     gl.useProgram(programs.stamp);
 
-    gl.bindBuffer(gl.ARRAY_BUFFER, models.stamp.bufferPosition);
-    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, models.stamp.bufferIndices);
+    gl.bindBuffer(gl.ARRAY_BUFFER, models.quad.bufferPosition);
+    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, models.quad.bufferIndices);
 
     const vertexPosition = getAttribute(programs.stamp, "vertexPosition");
     gl.enableVertexAttribArray(vertexPosition);
@@ -162,7 +155,7 @@ const updateScene = () => {
 
     gl.drawElements(
       gl.TRIANGLES,
-      models.stamp.indicesData.length,
+      models.quad.indicesData.length,
       gl.UNSIGNED_SHORT,
       0
     );
@@ -172,25 +165,21 @@ const updateScene = () => {
 };
 
 const drawScene = () => {
-  gl.viewport(0, 0, gl.drawingBufferWidth, gl.drawingBufferHeight);
+  gl.viewport(0, 0, 512, 512);
   gl.clearColor(0.529, 0.808, 0.922, 1.0);
   gl.clear(gl.COLOR_BUFFER_BIT);
   gl.lineWidth(1);
 
+  if(click)
   {
-    gl.useProgram(programs.rendering);
-
-    gl.activeTexture(gl.TEXTURE0);
-    gl.bindTexture(gl.TEXTURE_2D, textures.heightB);
-    const heightSampler = getUniform(programs.rendering, "heightSampler");
-    gl.uniform1i(heightSampler, 0);
+    gl.useProgram(programs.stamp);
 
     gl.bindBuffer(gl.ARRAY_BUFFER, models.quad.bufferPosition);
     gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, models.quad.bufferIndices);
 
-    const vertexPosition = getAttribute(programs.rendering, "vertexPosition");
-    gl.vertexAttribPointer(vertexPosition, 2, gl.FLOAT, false, 0, 0);
+    const vertexPosition = getAttribute(programs.stamp, "vertexPosition");
     gl.enableVertexAttribArray(vertexPosition);
+    gl.vertexAttribPointer(vertexPosition, 2, gl.FLOAT, false, 0, 0);
 
     gl.drawElements(
       gl.TRIANGLES,
@@ -198,6 +187,29 @@ const drawScene = () => {
       gl.UNSIGNED_SHORT,
       0
     );
+  }
+  
+  {
+    // gl.useProgram(programs.rendering);
+
+    // gl.activeTexture(gl.TEXTURE0);
+    // gl.bindTexture(gl.TEXTURE_2D, textures.heightB);
+    // const heightSampler = getUniform(programs.rendering, "heightSampler");
+    // gl.uniform1i(heightSampler, 0);
+
+    // gl.bindBuffer(gl.ARRAY_BUFFER, models.quad.bufferPosition);
+    // gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, models.quad.bufferIndices);
+
+    // const vertexPosition = getAttribute(programs.rendering, "vertexPosition");
+    // gl.vertexAttribPointer(vertexPosition, 2, gl.FLOAT, false, 0, 0);
+    // gl.enableVertexAttribArray(vertexPosition);
+
+    // gl.drawElements(
+    //   gl.TRIANGLES,
+    //   models.quad.indicesData.length,
+    //   gl.UNSIGNED_SHORT,
+    //   0
+    // );
   }
 };
 
@@ -210,7 +222,6 @@ const renderFirst = () => {
 };
 
 const renderFrame = () => {
-  resizeCanvas();
   updateScene();
   drawScene();
   const nowTime = Date.now();
@@ -224,6 +235,11 @@ const renderFrame = () => {
 const runAsync = async () => {
   document.addEventListener("click", e => {
     console.log(e.x, e.y, e);
+
+    click = {
+      x: e.clientX,
+      y: e.clientY,
+    }
   });
 
   if (!gl) {
@@ -246,8 +262,8 @@ const runAsync = async () => {
   );
 
   {
-    const verticesData = [-1, +1, -1, -1, +1, -1, +1, +1];
-    const indicesData = [0, 1, 3, 3, 1, 2];
+    const verticesData = [-1, -1, +1, -1, -1, +1, +1, +1];
+    const indicesData = [0, 2, 1, 3, 2, 1];
 
     const bufferPosition = gl.createBuffer();
     gl.bindBuffer(gl.ARRAY_BUFFER, bufferPosition);
@@ -275,38 +291,9 @@ const runAsync = async () => {
   }
 
   {
-    const verticesData = [-0.0, +0.5, +0.5, -0.5, -0.5, -0.5];
-    const indicesData = [0, 2, 1];
-
-    const bufferPosition = gl.createBuffer();
-    gl.bindBuffer(gl.ARRAY_BUFFER, bufferPosition);
-    gl.bufferData(
-      gl.ARRAY_BUFFER,
-      new Float32Array(verticesData),
-      gl.STATIC_DRAW
-    );
-
-    const bufferIndices = gl.createBuffer();
-    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, bufferIndices);
-    gl.bufferData(
-      gl.ELEMENT_ARRAY_BUFFER,
-      new Uint16Array(indicesData),
-      gl.STATIC_DRAW
-    );
-
-    const model = {
-      bufferPosition,
-      bufferIndices,
-      indicesData,
-      verticesData
-    };
-    models.stamp = model;
-  }
-
-  {
     const data = [];
-    for (let y = 0; y < 256; y++) {
-      for (let x = 0; x < 256; x++) {
+    for (let y = 0; y < 512; y++) {
+      for (let x = 0; x < 512; x++) {
         data.push(255);
         data.push(255);
         data.push(255);
@@ -318,8 +305,8 @@ const runAsync = async () => {
     const target = gl.TEXTURE_2D;
     const level = 0;
     const internalformat = gl.RGBA;
-    const width = 256;
-    const height = 256;
+    const width = 512;
+    const height = 512;
     const border = 0;
     const format = internalformat;
     const type = gl.UNSIGNED_BYTE;
@@ -348,8 +335,8 @@ const runAsync = async () => {
 
   {
     const data = [];
-    for (let y = 0; y < 256; y++) {
-      for (let x = 0; x < 256; x++) {
+    for (let y = 0; y < 512; y++) {
+      for (let x = 0; x < 512; x++) {
         data.push(0);
         data.push(0);
         data.push(0);
@@ -361,8 +348,8 @@ const runAsync = async () => {
     const target = gl.TEXTURE_2D;
     const level = 0;
     const internalformat = gl.RGBA;
-    const width = 256;
-    const height = 256;
+    const width = 512;
+    const height = 512;
     const border = 0;
     const format = internalformat;
     const type = gl.UNSIGNED_BYTE;
@@ -391,8 +378,8 @@ const runAsync = async () => {
 
   {
     const data = [];
-    for (let y = 0; y < 256; y++) {
-      for (let x = 0; x < 256; x++) {
+    for (let y = 0; y < 512; y++) {
+      for (let x = 0; x < 512; x++) {
         data.push(0);
         data.push(0);
         data.push(0);
@@ -404,8 +391,8 @@ const runAsync = async () => {
     const target = gl.TEXTURE_2D;
     const level = 0;
     const internalformat = gl.RGBA;
-    const width = 256;
-    const height = 256;
+    const width = 512;
+    const height = 512;
     const border = 0;
     const format = internalformat;
     const type = gl.UNSIGNED_BYTE;
@@ -427,8 +414,8 @@ const runAsync = async () => {
     );
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+    gl.texParameteri(gl.TEXTURE_2D, gl.CLAMP_TO_EDGE, gl.CLAMP_TO_EDGE);
+    gl.texParameteri(gl.TEXTURE_2D, gl.CLAMP_TO_EDGE, gl.CLAMP_TO_EDGE);
     textures.heightC = texture;
   }
 
