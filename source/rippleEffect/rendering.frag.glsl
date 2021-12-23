@@ -8,5 +8,5 @@ out vec4 fragment;
 void main() {
   vec4 backgroundSample = texture(backgroundSampler, st);
   vec4 heightSample = texture(heightSampler, st);
-  fragment = vec4(backgroundSample, 0, 0, 1);
+  fragment = vec4(abs(st.x), 0, 0, 1);
 }

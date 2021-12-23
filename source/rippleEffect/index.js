@@ -93,6 +93,9 @@ const loadShaderProgram = (vertexSource, fragmentSource) => {
     debug("program", gl.getProgramInfoLog(shaderProgram));
     debug("vertex", gl.getShaderInfoLog(vertexShader));
     debug("fragment", gl.getShaderInfoLog(fragmentShader));
+
+    console.error(vertexSource)
+    console.error(fragmentSource)
   }
 
   return shaderProgram;
@@ -108,6 +111,11 @@ const drawStamp = () => {
   gl.enableVertexAttribArray(vertexPosition);
   gl.vertexAttribPointer(vertexPosition, 2, gl.FLOAT, false, 0, 0);
 
+  if(click){
+    const clickUniform = getUniform(programs.stamp, "click");
+    gl.uniform2i(clickUniform, click.x, click.y);  
+  }
+  
   gl.drawElements(
     gl.TRIANGLES,
     models.quad.indicesData.length,
@@ -397,8 +405,8 @@ const runAsync = async () => {
     );
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
-    gl.texParameteri(gl.TEXTURE_2D, gl.CLAMP_TO_EDGE, gl.CLAMP_TO_EDGE);
-    gl.texParameteri(gl.TEXTURE_2D, gl.CLAMP_TO_EDGE, gl.CLAMP_TO_EDGE);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
     textures.heightC = texture;
   }
 
